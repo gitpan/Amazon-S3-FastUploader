@@ -19,18 +19,18 @@ sub upload {
 
     my $self = shift;
     my $local_dir = shift;
-    my $remote_dir = shift;
+    my $bucket_name = shift;
+    my $target_dir = shift;
 
     my $config = $self->config;
 
     my $process = $config->{process};
     my $s3 = Amazon::S3->new($config);
 
-    my ($bucket_name) = ( $remote_dir =~ /s3:\/\/([^\/]+)\// );
     my $bucket = $s3->bucket($bucket_name) or die 'cannot get bucket';
 
     $self->_print("local  dir : " . $local_dir . "\n");
-    $self->_print("remote dir : " . $remote_dir . "\n");
+    $self->_print("remote dir : " . $target_dir . "\n");
     $self->_print("max process: " . $process . "\n");
     $self->_print("use SSL: " . $config->{secure}. "\n");
     $self->_print("use encryption: " . $config->{encrypt}. "\n");
@@ -39,11 +39,17 @@ sub upload {
 
     my $callback = sub {
         return unless -f ;
-        my $file = Amazon::S3::FastUploader::File->new($File::Find::name, $remote_dir, $bucket, $config);
+        my $file = Amazon::S3::FastUploader::File->new({
+            local_path => $File::Find::name,
+            target_dir => $target_dir,
+            bucket => $bucket,
+            config => $config,
+        });
         push @local_files , $file;
     };
 
-    find($callback, $local_dir);
+    chdir $local_dir;
+    find($callback, '.');
 
     if ($process > 1) {
         $self->_upload_parallel(\@local_files, $process);
@@ -127,11 +133,11 @@ Amazon::S3::FastUploader -  fast uploader to Amazon S3
 
 =head1 VERSION
 
-Version 0.01
+Version 0.02
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 
 =head1 SYNOPSIS
@@ -144,15 +150,15 @@ The module uses Parallel::ForkManager internally.
     use Amazon::S3::FastUploader;
 
     my $local_dir = '/path/to/dir/';
-    my $remote_dir = 's3://mybucket/dir/';
-
+    my $bucket_name = 'myubcket';
+    my $remote_dir '/path/to/dir/';
     my $uploader = Amazon::S3::FastUploader->new({
         aws_access_key_id => 'your_key_id',
         aws_secret_access_key => 'your_secre_key',
         process => 10,
     });
 
-    $uploader->upload($local_dir, $remote_dir);
+    $uploader->upload($local_dir, $bucket_name, $remote_dir);
 
 =head1 METHODS
 
@@ -163,7 +169,7 @@ Instaniates a new object.
 Requires a hashref
 
 
-=head2 upload $local_dir $remote_dir
+=head2 upload $local_dir  $bucket_name  $remote_dir
 
 upload recursively $local_dir to $remote_dir
 

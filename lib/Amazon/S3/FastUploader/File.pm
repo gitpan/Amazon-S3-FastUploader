@@ -2,24 +2,7 @@ package Amazon::S3::FastUploader::File;
 use strict;
 use warnings;
 use base qw( Class::Accessor );
-__PACKAGE__->mk_accessors( qw(local_path remote_dir bucket config) );
-
-our $VERSION = '0.01';
-
-sub new {
-    my $class = shift;
-    my $path = shift;
-    my $remote_dir = shift;
-    my $bucket = shift;
-    my $config = shift;
-
-    bless {
-        local_path => $path,
-        remote_dir => $remote_dir,
-        bucket => $bucket,
-        config => $config,
-    }, $class;
-}
+__PACKAGE__->mk_accessors( qw(local_path target_dir bucket config) );
 
 sub upload {
     my $self = shift;
@@ -34,10 +17,10 @@ sub upload {
     my $count_failed = 0;
     my $max_retry = 5;
     my $is_success = 0;
-
+    
     while (! $is_success && $count_failed < $max_retry) {
-        $is_success = $bucket->add_key_filename($self->remote_key, $self->local_path, $opt) 
-                or do { warn "canno upload file " . $self->from_to; $count_failed++; };
+        $is_success = $bucket->add_key_filename($self->_remote_key, $self->local_path, $opt) 
+                or do { warn "canno upload file " . $self->_from_to; $count_failed++; };
         if ($is_success) {
                 return 1;
         }
@@ -47,26 +30,55 @@ sub upload {
 
 }
 
-sub from_to {
+sub _from_to {
     my $self = shift;
 
     return $self->local_path . " -> " . $self->remote_key;
 }
 
-sub remote_path {
+sub _remote_key {
     my $self = shift;
     my $local_path = $self->{local_path};
     $local_path =~ s|^\./||;
-    return $self->remote_dir . $local_path;
+    return  $self->target_dir . $local_path;
 }
 
+=head1 NAME
 
-sub remote_key {
-    my $self = shift;
-    my $remote_path = $self->remote_path;
-    $remote_path =~ s|^s3\://[^/]+/||i;
-    $remote_path;
-}
+Amazon::S3::FastUploader -  fast uploader to Amazon S3
+
+=head1 VERSION
+
+Version 0.02
+
+=cut
+
+our $VERSION = '0.02';
+
+
+=head1 SYNOPSIS
+
+This is an internal module of Amazon::S3::FastUploader.
+
+=head1 METHODS
+
+=head2 new
+
+takes a hashref:
+
+local_path: full path to a local file
+
+target_dir: dirname on S3
+
+bucket: a bucket object
+
+config: config option (hashref)
+
+=head2 upload
+
+do uploading
+
+=cut
 
 1;
 
