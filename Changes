@@ -5,3 +5,6 @@ Revision history for Amazon-S3-FastUploader
 
 0.02    2012-09-25
         Changed API
+
+0.03    2012-09-26
+        bugfix

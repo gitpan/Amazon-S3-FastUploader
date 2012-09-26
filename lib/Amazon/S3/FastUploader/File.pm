@@ -20,7 +20,7 @@ sub upload {
     
     while (! $is_success && $count_failed < $max_retry) {
         $is_success = $bucket->add_key_filename($self->_remote_key, $self->local_path, $opt) 
-                or do { warn "canno upload file " . $self->_from_to; $count_failed++; };
+                or do { warn "canno upload file " . $self->from_to; $count_failed++; };
         if ($is_success) {
                 return 1;
         }
@@ -30,10 +30,10 @@ sub upload {
 
 }
 
-sub _from_to {
+sub from_to {
     my $self = shift;
 
-    return $self->local_path . " -> " . $self->remote_key;
+    return $self->local_path . " -> " . $self->_remote_key;
 }
 
 sub _remote_key {
@@ -77,6 +77,10 @@ config: config option (hashref)
 =head2 upload
 
 do uploading
+
+=head2 from_to
+
+return a string wich shows source filename and target filename
 
 =cut
 
