@@ -2,12 +2,15 @@ package Amazon::S3::FastUploader::File;
 use strict;
 use warnings;
 use base qw( Class::Accessor );
-__PACKAGE__->mk_accessors( qw(local_path target_dir bucket config) );
+__PACKAGE__->mk_accessors( qw(local_path target_dir bucket config s3) );
+
+our $VERSION = '0.04';
 
 sub upload {
     my $self = shift;
 
-    my $bucket = $self->{bucket};
+    my $bucket = $self->bucket;
+    my $s3 = $self->s3;
 
     my $opt = {};
     if ($self->config->{encrypt}) {
@@ -20,7 +23,7 @@ sub upload {
     
     while (! $is_success && $count_failed < $max_retry) {
         $is_success = $bucket->add_key_filename($self->_remote_key, $self->local_path, $opt) 
-                or do { warn "canno upload file " . $self->from_to; $count_failed++; };
+                or do { warn $s3->err . ": " . $s3->errstr . "(" . $self->from_to .")" ; $count_failed++; };
         if ($is_success) {
                 return 1;
         }
@@ -46,15 +49,6 @@ sub _remote_key {
 =head1 NAME
 
 Amazon::S3::FastUploader -  fast uploader to Amazon S3
-
-=head1 VERSION
-
-Version 0.02
-
-=cut
-
-our $VERSION = '0.02';
-
 
 =head1 SYNOPSIS
 
