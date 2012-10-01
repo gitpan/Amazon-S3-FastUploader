@@ -21,4 +21,4 @@ requires:
   Amazon::S3: 0
   Parallel::ForkManager: 0
   Test::More: 0
-version: 0.04
+version: 0.05
